@@ -107,3 +107,46 @@ if('serviceWorker' in navigator){addEventListener('load',()=>navigator.serviceWo
 const navLinks=document.querySelectorAll('.bottom-nav a[href^="#"]');
 if('IntersectionObserver' in window){new IntersectionObserver(entries=>entries.forEach(entry=>{navLinks.forEach(link=>{if(link.hash===(entry.isIntersecting?'#saved':'#home'))link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');});}),{threshold:.2}).observe($('#saved'));}
 navLinks.forEach(link=>link.addEventListener('click',()=>navLinks.forEach(other=>{if(link===other)other.setAttribute('aria-current','page');else other.removeAttribute('aria-current');})));
+
+// Contact details live on this device, never in the published app source.
+const contactKey='pocket-yuki-contact-v1';
+const normalizePhone=value=>{
+ const clean=String(value).trim().replace(/^00/,'+').replace(/[\s().-]/g,'');
+ if(!/^\+[1-9]\d{6,14}$/.test(clean))return null;
+ if(clean.startsWith('+216')&&clean.length!==12)return null;
+ return clean.slice(1);
+};
+let yukiPhone='';
+try{const stored=localStorage.getItem(contactKey);if(stored&&normalizePhone('+'+stored))yukiPhone=stored;}catch{}
+let pendingSignal=null;
+const signalText={miss:'Yuki, I miss you. ♡ — Mimi',hug:'Yuki, I could really use a hug. ♡ — Mimi',call:'Yuki, call me when you can. ♡ — Mimi'};
+const contactDialog=$('#contact-dialog');
+function contactLabel(){$('#signal-settings').textContent=yukiPhone?'Change Yuki’s number':'Set Yuki’s number';}
+function openContact(){ $('#yuki-number').value=yukiPhone?'+'+yukiPhone:'';$('#contact-error').textContent='';contactDialog.showModal();}
+function signal(kind){
+ if(!yukiPhone){pendingSignal=kind;openContact();return;}
+ const url=`https://wa.me/${yukiPhone}?text=${encodeURIComponent(signalText[kind])}`;
+ // Native Android opens an external browser/WhatsApp; the website opens a new tab.
+ const link=document.createElement('a');link.href=url;link.target=window.Capacitor?.isNativePlatform?.()?'_self':'_blank';link.rel='noopener noreferrer';document.body.append(link);link.click();link.remove();
+ $('#signal-status').textContent='Your message is ready to open in WhatsApp. Review it there, then tap Send when you’re ready.';
+}
+document.querySelectorAll('[data-signal]').forEach(button=>button.addEventListener('click',()=>signal(button.dataset.signal)));
+$('#signal-settings').addEventListener('click',()=>{pendingSignal=null;openContact();});
+$('#close-contact').addEventListener('click',()=>{pendingSignal=null;contactDialog.close();});
+contactDialog.addEventListener('click',event=>{if(event.target===contactDialog){pendingSignal=null;contactDialog.close();}});
+$('#contact-form').addEventListener('submit',event=>{
+ event.preventDefault();const normalized=normalizePhone($('#yuki-number').value);
+ if(!normalized){$('#contact-error').textContent='Use + and the country code, then the number. Tunisian numbers have 8 digits after +216.';return;}
+ yukiPhone=normalized;let persisted=true;try{localStorage.setItem(contactKey,yukiPhone);}catch{persisted=false;}
+ contactLabel();contactDialog.close();$('#signal-status').textContent=persisted?'Yuki’s number is saved on this device. Choose a signal whenever you like.':'The number is ready for this visit. This browser couldn’t save it permanently.';
+ const chosen=pendingSignal;pendingSignal=null;if(chosen)signal(chosen);
+});
+$('#forget-contact').addEventListener('click',()=>{
+ try{localStorage.removeItem(contactKey);}catch{$('#contact-error').textContent='The saved number couldn’t be removed. Please try again.';return;}
+ yukiPhone='';pendingSignal=null;contactLabel();contactDialog.close();$('#signal-status').textContent='Yuki’s number has been removed from this device.';
+});
+contactDialog.addEventListener('close',()=>{pendingSignal=null;});
+// Optional private setup link. Its fragment is consumed locally and removed from the URL.
+const contactFragment=location.hash.match(/^#contact=(.+)$/);
+if(contactFragment){try{const phone=normalizePhone('+'+decodeURIComponent(contactFragment[1]).replace(/^\+/,''));if(phone){yukiPhone=phone;try{localStorage.setItem(contactKey,phone);}catch{}history.replaceState(null,'',location.pathname+location.search);$('#signal-status').textContent='Your Yuki contact is ready. ♡';}}catch{}}
+contactLabel();
