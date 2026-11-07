@@ -1,0 +1,67 @@
+name: Build Pocket Yuki Android
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: pocket-yuki-android
+  cancel-in-progress: false
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      BUILD_NUMBER: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: android-app/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Install and bundle
+        working-directory: android-app
+        run: |
+          npm ci --no-audit --no-fund
+          node build-web.mjs
+          node prepare-android.mjs
+          npx cap sync android
+      - name: Build installable test APK
+        working-directory: android-app/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/Pocket-Yuki.apk"
+      - name: Verify APK signature
+        run: |
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose Pocket-Yuki.apk
+      - name: Enable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Install and launch in Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          script: bash android-app/smoke-test.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Pocket-Yuki-Android
+          path: |
+            Pocket-Yuki.apk
+            android-smoke.png
+            android-ui.xml
+            android-logcat.txt
+      - name: Publish APK download
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "pocket-yuki-android-${{ github.run_number }}" Pocket-Yuki.apk --title "Pocket Yuki for Android" --notes-file android-app/release-notes.md

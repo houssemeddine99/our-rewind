@@ -38,10 +38,12 @@ const library={
   {title:'A playlist walk.',body:'Choose three songs each, take a little walk, and tell each other why you picked them.\n\nMake a tiny soundtrack for this chapter of us.'},
  ],
 };
-const labels={miss:'WHEN YOU MISS ME',comfort:'A SOFTER LITTLE MOMENT',smile:'OUR VERY UNSERIOUS SIDE',love:'A FEW REASONS, FROM YUKI',date:'A LITTLE PLAN FOR US'};
-const symbols={miss:'♡',comfort:'☁',smile:'☺',love:'✳',date:'↗'};
+library.album=[{"title":"A whole little ocean of us.","body":"One more little piece of our story. I’m glad we kept this one. ♡","photo":121},{"title":"Sunshine, water, my favorite person.","body":"One more little piece of our story. I’m glad we kept this one. ♡","photo":122},{"title":"The kind of hug I’d replay.","body":"One more little piece of our story. I’m glad we kept this one. ♡","photo":123},{"title":"Your smile is the whole point.","body":"One more little piece of our story. I’m glad we kept this one. ♡","photo":124},{"title":"Saltwater and my favorite company.","body":"One more little piece of our story. I’m glad we kept this one. ♡","photo":125},{"title":"Our very unserious side, again.","body":"One more little piece of our story. I’m glad we kept this one. ♡","photo":126},{"title":"A little underwater magic.","body":"One more little piece of our story. I’m glad we kept this one. ♡","photo":127},{"title":"You make every view better.","body":"One more little piece of our story. I’m glad we kept this one. ♡","photo":128},{"title":"Just being close to you.","body":"One more little piece of our story. I’m glad we kept this one. ♡","photo":129},{"title":"Another mirror, another favorite.","body":"One more little piece of our story. I’m glad we kept this one. ♡","photo":130},{"title":"A little more of us, in motion.","body":"Some memories deserve a play button. Here’s one more for our little collection.","video":27}];
+library.miss.push({title:'One more little moment.',body:'A new memory for the days you want a little more of us. ♡',video:27});
+const labels={album:'OUR LITTLE MEMORY ALBUM',miss:'WHEN YOU MISS ME',comfort:'A SOFTER LITTLE MOMENT',smile:'OUR VERY UNSERIOUS SIDE',love:'A FEW REASONS, FROM YUKI',date:'A LITTLE PLAN FOR US'};
+const symbols={album:'♡',miss:'♡',comfort:'☁',smile:'☺',love:'✳',date:'↗'};
 const key='pocket-yuki-keepsakes-v1';
-const validId=id=>typeof id==='string'&&/^(miss|comfort|smile|love|date)-\d+$/.test(id)&&Boolean(library[id.split('-')[0]]?.[Number(id.split('-')[1])]);
+const validId=id=>typeof id==='string'&&/^(miss|comfort|smile|love|date|album)-\d+$/.test(id)&&Boolean(library[id.split('-')[0]]?.[Number(id.split('-')[1])]);
 let saved=[];
 let storageAvailable=true;
 try{const value=JSON.parse(localStorage.getItem(key)||'[]');if(Array.isArray(value))saved=[...new Set(value.filter(validId))];}catch{storageAvailable=false;}
