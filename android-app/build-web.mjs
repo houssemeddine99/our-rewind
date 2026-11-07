@@ -26,7 +26,7 @@ for(const id of [4,8,13,26,27])for(const [prefix,ext]of [['clip','mp4'],['poster
 }
 await sharp(path.join(root,'character-source.png')).resize(600,600,{fit:'contain',background:'#f8f6ef'}).png().toFile(path.join(out,'mascot.png'));
 let css=await fs.readFile(path.join(out,'app.css'),'utf8');
-css=css.replace(/^@import[^;]+;/,'');
+css=css.replace(/^@import[^\r\n]*(?:\r?\n|$)/,'');
 // Bundle fonts so the first launch is also complete in airplane mode.
 const fontUrl='https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&family=Caveat:wght@400;500&display=swap';
 const response=await fetch(fontUrl);if(!response.ok)throw Error('Font download failed.');
